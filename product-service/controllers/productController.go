@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/nazzarr03/product-service/config"
@@ -19,7 +20,14 @@ func GetProducts(c *fiber.Ctx) error {
 
 func GetProductByID(c *fiber.Ctx) error {
 	var product models.Product
-	config.Db.First(&product, c.Params("id"))
+	idStr := c.Params("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid ID",
+		})
+	}
+	config.Db.Where("id = ?", id).First(&product)
 	if product.ID == 0 {
 		return c.Status(http.StatusNotFound).JSON(fiber.Map{
 			"error": "Product not found",
@@ -67,7 +75,14 @@ func UpdateProduct(c *fiber.Ctx) error {
 		})
 	}
 
-	config.Db.First(&product, c.Params("id"))
+	idStr := c.Params("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid ID",
+		})
+	}
+	config.Db.Where("id = ?", id).First(&product)
 	if product.ID == 0 {
 		return c.Status(http.StatusNotFound).JSON(fiber.Map{
 			"error": "Product not found",

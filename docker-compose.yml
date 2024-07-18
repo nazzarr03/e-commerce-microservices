@@ -8,31 +8,44 @@ services:
     depends_on:
       - user-service
       - product-service
+    networks:
+      - postgres_network
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: e-commerce
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres_network
 
   user-service:
     build: ./user-service
     ports:
       - "8081:8081"
     depends_on:
-      - user-db
-  
+      - postgres
+    networks:
+      - postgres_network
+
   product-service:
     build: ./product-service
     ports:
       - "8082:8082"
     depends_on:
-      - product-db
-  
-  user-db:
-    image: postgres:latest
-    environment:
-      - POSTGRES_DB=userdb
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-  
-  product-db:
-    image: postgres:latest
-    environment:
-      - POSTGRES_DB=productdb
-      - POSTGRES_USER=product
-      - POSTGRES_PASSWORD=password
+      - postgres
+    networks:
+      - postgres_network
+
+networks:
+  postgres_network:
+    driver: bridge
+
+volumes:
+  postgres:

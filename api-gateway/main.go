@@ -22,10 +22,10 @@ func main() {
 	})
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "*",
-		AllowMethods:     "*",
+		AllowMethods:     "GET, POST, PUT, DELETE",
 		AllowHeaders:     "*",
 		ExposeHeaders:    "*",
-		AllowCredentials: true,
+		AllowCredentials: false,
 	}))
 
 	err := godotenv.Load(".env")
@@ -34,9 +34,17 @@ func main() {
 		panic(err)
 	}
 
-	app.Post("/api/v1/user/*", forwardToService("USER_SERVICE_URL"))
-	app.Post("/api/v1/product/*", forwardToService("PRODUCT_SERVICE_URL"))
-	app.Listen(":80")
+	app.Post("/api/v1/user/signup", forwardToService("USER_SERVICE_URL"))
+	app.Post("/api/v1/user/login", forwardToService("USER_SERVICE_URL"))
+	app.Get("/api/v1/user/user", forwardToService("USER_SERVICE_URL"))
+	app.Get("/api/v1/user/user/:id", forwardToService("USER_SERVICE_URL"))
+
+	app.Get("/api/v1/product/product", forwardToService("PRODUCT_SERVICE_URL"))
+	app.Get("/api/v1/product/product/:id", forwardToService("PRODUCT_SERVICE_URL"))
+	app.Post("/api/v1/product/product", forwardToService("PRODUCT_SERVICE_URL"))
+	app.Put("/api/v1/product/product/:id", forwardToService("PRODUCT_SERVICE_URL"))
+
+	app.Listen(":8080")
 
 }
 
@@ -44,31 +52,42 @@ func forwardToService(serviceEnvVar string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		serviceURL := os.Getenv(serviceEnvVar)
 		if serviceURL == "" {
-			return c.Status(http.StatusInternalServerError).SendString(fmt.Sprintf("%s is not set", serviceEnvVar))
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+				"error": fmt.Sprintf("%s is not set", serviceEnvVar),
+			})
 		}
 
-		targetURL := serviceURL + c.Path()[8:] // Removing "/api/v1"
+		targetURL := serviceURL + c.Path()
 		body := bytes.NewReader(c.Body())
-		proxyReq, err := http.NewRequest(c.Method(), targetURL, body)
+		req, err := http.NewRequest(c.Method(), targetURL, body)
 		if err != nil {
-			return c.Status(http.StatusInternalServerError).SendString(err.Error())
-		}
-		proxyReq.Header = c.GetReqHeaders()
-		client := &http.Client{}
-		proxyResp, err := client.Do(proxyReq)
-		if err != nil {
-			return c.Status(http.StatusInternalServerError).SendString(err.Error())
-		}
-		defer proxyResp.Body.Close()
-
-		bodyBytes, err := io.ReadAll(proxyResp.Body)
-		if err != nil {
-			return c.Status(http.StatusInternalServerError).SendString(err.Error())
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
 		}
 
-		c.Status(proxyResp.StatusCode)
-		for k, v := range proxyResp.Header {
-			c.Set(k, v[0])
+		req.Header = c.GetReqHeaders()
+		client := http.Client{}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+		defer resp.Body.Close()
+
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		c.Status(resp.StatusCode)
+
+		for key, value := range resp.Header {
+			c.Set(key, value[0])
 		}
 
 		return c.Send(bodyBytes)
