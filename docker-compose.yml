@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-service
+      - product-service
+
+  user-service:
+    build: ./user-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - user-db
+  
+  product-service:
+    build: ./product-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - product-db
+  
+  user-db:
+    image: postgres:latest
+    environment:
+      - POSTGRES_DB=userdb
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+  
+  product-db:
+    image: postgres:latest
+    environment:
+      - POSTGRES_DB=productdb
+      - POSTGRES_USER=product
+      - POSTGRES_PASSWORD=password
