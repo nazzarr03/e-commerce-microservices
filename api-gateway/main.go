@@ -48,12 +48,12 @@ func main() {
 
 }
 
-func forwardToService(serviceEnvVar string) fiber.Handler {
+func forwardToService(service string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		serviceURL := os.Getenv(serviceEnvVar)
+		serviceURL := os.Getenv(service)
 		if serviceURL == "" {
 			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
-				"error": fmt.Sprintf("%s is not set", serviceEnvVar),
+				"error": fmt.Sprintf("%s is not set", service),
 			})
 		}
 
