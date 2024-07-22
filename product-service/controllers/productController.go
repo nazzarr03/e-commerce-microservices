@@ -13,14 +13,21 @@ func GetProducts(c *fiber.Ctx) error {
 	var products []models.Product
 	config.Db.Find(&products)
 
+	if len(products) == 0 {
+		return c.Status(http.StatusNotFound).JSON(fiber.Map{
+			"error": "Products not found",
+		})
+	}
+
 	return c.Status(http.StatusOK).JSON(fiber.Map{
-		"data": products,
+		"data":    products,
+		"message": "Successfully retrieved products",
 	})
 }
 
 func GetProductByID(c *fiber.Ctx) error {
 	var product models.Product
-	idStr := c.Params("id")
+	idStr := c.Params("product_id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
@@ -28,14 +35,15 @@ func GetProductByID(c *fiber.Ctx) error {
 		})
 	}
 	config.Db.Where("id = ?", id).First(&product)
-	if product.ID == 0 {
+	if product.ProductID == 0 {
 		return c.Status(http.StatusNotFound).JSON(fiber.Map{
 			"error": "Product not found",
 		})
 	}
 
 	return c.Status(http.StatusOK).JSON(fiber.Map{
-		"data": product,
+		"data":    product,
+		"message": "Successfully retrieved product",
 	})
 }
 
@@ -75,7 +83,7 @@ func UpdateProduct(c *fiber.Ctx) error {
 		})
 	}
 
-	idStr := c.Params("id")
+	idStr := c.Params("product_id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
@@ -83,7 +91,7 @@ func UpdateProduct(c *fiber.Ctx) error {
 		})
 	}
 	config.Db.Where("id = ?", id).First(&product)
-	if product.ID == 0 {
+	if product.ProductID == 0 {
 		return c.Status(http.StatusNotFound).JSON(fiber.Map{
 			"error": "Product not found",
 		})
@@ -97,6 +105,10 @@ func UpdateProduct(c *fiber.Ctx) error {
 		product.Price = newProduct.Price
 	}
 
+	if newProduct.Stock != 0 {
+		product.Stock = newProduct.Stock
+	}
+
 	config.Db.Save(&product)
 
 	return c.Status(http.StatusOK).JSON(fiber.Map{
@@ -107,8 +119,8 @@ func UpdateProduct(c *fiber.Ctx) error {
 
 func DeleteProduct(c *fiber.Ctx) error {
 	var product models.Product
-	config.Db.First(&product, c.Params("id"))
-	if product.ID == 0 {
+	config.Db.First(&product, c.Params("product_id"))
+	if product.ProductID == 0 {
 		return c.Status(http.StatusNotFound).JSON(fiber.Map{
 			"error": "Product not found",
 		})

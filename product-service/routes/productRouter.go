@@ -13,7 +13,8 @@ func Setup(app *fiber.App) {
 	product.Use(middleware.Authentication())
 
 	product.Get("/product", controllers.GetProducts)
-	product.Get("/product/:id", controllers.GetProductByID)
+	product.Get("/product/:product_id", controllers.GetProductByID)
 	product.Post("/product", controllers.CreateProduct)
-	product.Put("/product/:id", controllers.UpdateProduct)
+	product.Put("/product/:product_id", controllers.UpdateProduct)
+	product.Delete("/product/:product_id", controllers.DeleteProduct)
 }

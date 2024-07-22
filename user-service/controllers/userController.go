@@ -14,6 +14,12 @@ func GetUsers(c *fiber.Ctx) error {
 	var users []models.User
 	config.Db.Find(&users)
 
+	if len(users) == 0 {
+		return c.Status(http.StatusNotFound).JSON(fiber.Map{
+			"error": "Users not found",
+		})
+	}
+
 	return c.Status(http.StatusOK).JSON(fiber.Map{
 		"data": users,
 	})

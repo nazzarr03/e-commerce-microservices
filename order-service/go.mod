@@ -1,4 +1,4 @@
-module github.com/nazzarr03/product-service
+module github.com/nazzarr03/order-service
 
 go 1.21.12
 

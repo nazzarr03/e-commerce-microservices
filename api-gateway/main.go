@@ -43,6 +43,19 @@ func main() {
 	app.Get("/api/v1/product/product/:id", forwardToService("PRODUCT_SERVICE_URL"))
 	app.Post("/api/v1/product/product", forwardToService("PRODUCT_SERVICE_URL"))
 	app.Put("/api/v1/product/product/:id", forwardToService("PRODUCT_SERVICE_URL"))
+	app.Delete("/api/v1/product/product/:id", forwardToService("PRODUCT_SERVICE_URL"))
+
+	app.Post("/api/v1/order/order", forwardToService("ORDER_SERVICE_URL"))
+	app.Get("/api/v1/order/order", forwardToService("ORDER_SERVICE_URL"))
+	app.Get("/api/v1/order/order/:id", forwardToService("ORDER_SERVICE_URL"))
+	app.Delete("/api/v1/order/order/:id", forwardToService("ORDER_SERVICE_URL"))
+
+	app.Post("/api/v1/order/order/:order_id/product/:product_id", forwardToService("ORDER_SERVICE_URL"))
+
+	app.Get(("/api/v1/order-item/order-item"), forwardToService("ORDER_SERVICE_URL"))
+	app.Get(("/api/v1/order-item/order-item/:id"), forwardToService("ORDER_SERVICE_URL"))
+	app.Put(("/api/v1/order-item/order-item/:id"), forwardToService("ORDER_SERVICE_URL"))
+	app.Delete(("/api/v1/order-item/order-item/:id"), forwardToService("ORDER_SERVICE_URL"))
 
 	app.Listen(":8080")
 

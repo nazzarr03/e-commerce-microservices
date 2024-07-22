@@ -25,6 +25,14 @@ services:
     networks:
       - postgres_network
 
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - postgres_network
+
   user-service:
     build: ./user-service
     ports:
@@ -40,6 +48,17 @@ services:
       - "8082:8082"
     depends_on:
       - postgres
+      - rabbitmq
+    networks:
+      - postgres_network
+    
+  order-service:
+    build: ./order-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - postgres
+      - rabbitmq
     networks:
       - postgres_network
 
