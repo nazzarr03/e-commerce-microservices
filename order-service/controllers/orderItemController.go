@@ -1,12 +1,13 @@
 package controllers
 
 import (
-	"math/rand"
+	"encoding/json"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/nazzarr03/order-service/config"
 	"github.com/nazzarr03/order-service/models"
+	"github.com/nazzarr03/order-service/utils"
 	"github.com/streadway/amqp"
 )
 
@@ -80,7 +81,7 @@ func CreateOrderItem(c *fiber.Ctx) error {
 		})
 	}
 
-	corrId := randomString(32)
+	corrId := utils.RandomString(32)
 
 	err = ch.Publish(
 		"",
@@ -102,15 +103,37 @@ func CreateOrderItem(c *fiber.Ctx) error {
 
 	for d := range msgs {
 		if d.CorrelationId == corrId {
-			productPrice, err := strconv.ParseFloat(string(d.Body), 64)
+			var response map[string]interface{}
+			err := json.Unmarshal(d.Body, &response)
 			if err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-					"error": "Cannot parse product price",
+					"error": "Cannot parse response",
+				})
+			}
+
+			productPrice, ok := response["price"].(float64)
+			if !ok {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": "Invalid price format",
+				})
+			}
+
+			productStock, ok := response["stock"].(float64)
+			if !ok {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": "Invalid stock format",
+				})
+			}
+
+			if productStock < float64(orderItem.Quantity) {
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+					"error": "Not enough stock",
 				})
 			}
 
 			orderItem.Price = productPrice
 			orderItem.TotalPrice = productPrice * float64(orderItem.Quantity)
+
 			break
 		}
 	}
@@ -125,15 +148,6 @@ func CreateOrderItem(c *fiber.Ctx) error {
 		"data":    orderItem,
 		"message": "Successfully created order item",
 	})
-}
-
-func randomString(length int) string {
-	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	var result string
-	for i := 0; i < length; i++ {
-		result += string(chars[rand.Intn(len(chars))])
-	}
-	return result
 }
 
 func GetOrderItems(c *fiber.Ctx) error {

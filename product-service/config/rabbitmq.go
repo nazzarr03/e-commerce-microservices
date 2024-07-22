@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 	"strconv"
@@ -71,6 +72,17 @@ func ProductConsumer() {
 			}
 			log.Println("Product found")
 
+			response := map[string]interface{}{
+				"price": product.Price,
+				"stock": product.Stock,
+			}
+
+			responseBody, err := json.Marshal(response)
+			if err != nil {
+				log.Printf("Error marshalling response: %s", err)
+				continue
+			}
+
 			err = ch.Publish(
 				"",
 				d.ReplyTo,
@@ -79,7 +91,7 @@ func ProductConsumer() {
 				amqp.Publishing{
 					ContentType:   "text/plain",
 					CorrelationId: d.CorrelationId,
-					Body:          []byte(strconv.FormatFloat(product.Price, 'f', -1, 64)),
+					Body:          responseBody,
 				},
 			)
 			if err != nil {
