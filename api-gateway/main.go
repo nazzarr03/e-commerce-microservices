@@ -4,18 +4,18 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/joho/godotenv"
+	"github.com/nazzarr03/api-gateway/middleware"
 )
 
 func main() {
 	app := fiber.New()
 
+	app.Use(middleware.LogMiddleware())
 	app.Use(func(c *fiber.Ctx) error {
 		fmt.Printf("Incoming request: %s %s \n", c.Method(), c.Path())
 		return c.Next()
@@ -27,12 +27,6 @@ func main() {
 		ExposeHeaders:    "*",
 		AllowCredentials: false,
 	}))
-
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Println("error loading .env file")
-		panic(err)
-	}
 
 	app.Post("/api/v1/user/signup", forwardToService("USER_SERVICE_URL"))
 	app.Post("/api/v1/user/login", forwardToService("USER_SERVICE_URL"))

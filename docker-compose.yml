@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
   api-gateway:
@@ -8,6 +8,9 @@ services:
     depends_on:
       - user-service
       - product-service
+      - order-service
+      - logger
+      - rabbitmq
     networks:
       - postgres_network
 
@@ -26,6 +29,7 @@ services:
       - postgres_network
 
   rabbitmq:
+    container_name: rabbitmq
     image: rabbitmq:management
     ports:
       - "5672:5672"
@@ -39,6 +43,7 @@ services:
       - "8081:8081"
     depends_on:
       - postgres
+      - logger
     networks:
       - postgres_network
 
@@ -49,6 +54,7 @@ services:
     depends_on:
       - postgres
       - rabbitmq
+      - logger
     networks:
       - postgres_network
     
@@ -59,6 +65,53 @@ services:
     depends_on:
       - postgres
       - rabbitmq
+      - logger
+    networks:
+      - postgres_network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.0.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "xpack.security.enabled=false"
+      - xpack.security.http.ssl.enabled=false
+    ports:
+      - "9200:9200"
+    networks:
+      - postgres_network
+
+  logger:
+    container_name: logger
+    build:
+      context: ./logger
+    ports:
+      - "8084:8084"
+    depends_on:
+      - elasticsearch
+      - rabbitmq
+      - grafana
+    networks:
+      - postgres_network
+  
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - elasticsearch
+    networks:
+      - postgres_network
+    
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:8.0.0
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
     networks:
       - postgres_network
 

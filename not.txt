@@ -1,0 +1,3 @@
+////// kafam karıştı bu yüzden yapılacak adımları yazıyotum
+
+stock takibi için rabbitmq kullan
